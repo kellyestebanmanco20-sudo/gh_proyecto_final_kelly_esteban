@@ -3,4 +3,6 @@ env:
   - name: DATABRICKS_HTTP_PATH
     value: /sql/1.0/warehouses/4dd2eee58725c00e
   - name: DATABRICKS_HOST
-    value: adbsmartdata010826ke.azuredatabricks.net
+    value: https://adb-7405612993390609.9.azuredatabricks.net
+  - name: APP_PAT_TOKEN
+    value: ""

@@ -44,73 +44,34 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- CONEXIÓN A DATABRICKS ---
-@st.cache_resource
-def get_spark():
-    try:
-        from pyspark.sql import SparkSession
-        return SparkSession.builder.getOrCreate()
-    except Exception:
-        return None
-
-WAREHOUSE_ID = "4dd2eee58725c00e"
+# --- CONEXIÓN A DATABRICKS (SQL Connector directo) ---
+_DB_HOST  = "adb-7405612993390609.9.azuredatabricks.net"
+_DB_PATH  = "/sql/1.0/warehouses/4dd2eee58725c00e"
 
 def execute_query(query, is_write=False):
-    # 1. Spark (funciona en clúster/notebook)
-    spark = get_spark()
-    if spark:
-        if is_write:
-            spark.sql(query)
-            return None
-        return spark.sql(query).toPandas()
-
-    # 2. SDK de Databricks — auth automática dentro de Apps
+    from databricks import sql as dbsql
+    token = os.environ.get("APP_PAT_TOKEN", "")
+    if not token:
+        st.error("❌ APP_PAT_TOKEN no está definido en app.yaml. Agrega el token PAT y redeploy.")
+        return pd.DataFrame()
     try:
-        from databricks.sdk import WorkspaceClient
-        from databricks.sdk.service.sql import StatementState, Disposition, Format
-        w = WorkspaceClient()
-        stmt = w.statement_execution.execute_statement(
-            warehouse_id=WAREHOUSE_ID,
-            statement=query,
-            wait_timeout="50s",
-            disposition=Disposition.INLINE,
-            format=Format.JSON_ARRAY,
-        )
-        if stmt.status.state != StatementState.SUCCEEDED:
-            raise Exception(f"SQL error: {stmt.status.error}")
-        if is_write:
-            return None
-        if not stmt.result or not stmt.result.data_array:
-            return pd.DataFrame()
-        cols = [c.name for c in stmt.manifest.schema.columns]
-        return pd.DataFrame(stmt.result.data_array, columns=cols)
-    except Exception:
-        pass
-
-    # 3. SQL Connector con token env var
-    try:
-        from databricks import sql as dbsql
-        host = os.getenv("DATABRICKS_HOST", "adbsmartdata010826ke.azuredatabricks.net")
-        http_path = os.getenv("DATABRICKS_HTTP_PATH", "/sql/1.0/warehouses/4dd2eee58725c00e")
-        token = os.getenv("DATABRICKS_TOKEN", "")
-        if not token:
-            raise Exception("sin token")
-        with dbsql.connect(server_hostname=host, http_path=http_path, access_token=token) as conn:
-            with conn.cursor() as cursor:
-                cursor.execute(query)
+        with dbsql.connect(
+            server_hostname=_DB_HOST,
+            http_path=_DB_PATH,
+            access_token=token
+        ) as conn:
+            with conn.cursor() as cur:
+                cur.execute(query)
                 if is_write:
                     return None
-                rows = cursor.fetchall()
+                rows = cur.fetchall()
                 if not rows:
                     return pd.DataFrame()
-                cols = [d[0] for d in cursor.description]
+                cols = [d[0] for d in cur.description]
                 return pd.DataFrame(rows, columns=cols)
-    except Exception:
-        pass
-
-    # 4. Sin conexión — aviso y retorno vacío
-    st.warning("⚠️ Sin conexión. Verifica permisos del service principal `app-4k1p2j gobierno-datos-positiva` sobre catalog_au.bronze.")
-    return pd.DataFrame()
+    except Exception as e:
+        st.error(f"❌ Error de conexión: {e}")
+        return pd.DataFrame()
 
 # --- HELPERS UI + SQL ---
 st.sidebar.image("https://upload.wikimedia.org/wikipedia/commons/e/e4/Shield-flat.svg", width=70)
