@@ -1,4 +1,4 @@
-name: Dynamic Databricks Notebook Deploy
+name: Dynamic Databricks Notebook Deploys
 on:
   push:
     branches:
