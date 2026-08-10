@@ -91,7 +91,7 @@ jobs:
       run: |
         DEST_HOST=${{ secrets.DATABRICKS_DEST_HOST }}
         DEST_TOKEN=${{ secrets.DATABRICKS_DEST_TOKEN }}
-        CLUSTER_NAME="Cluster_SD"
+        CLUSTER_NAME="cluster_SD_PF"
         
         echo "Buscando cluster existente: $CLUSTER_NAME"
         
@@ -294,7 +294,7 @@ jobs:
             "environment": "production",
             "created_by": "github_actions",
             "project": "automated_deployment",
-            "cluster_used": "Cluster_SD"
+            "cluster_used": "cluster_SD_PF"
           }
         }
         EOF
@@ -356,7 +356,7 @@ jobs:
           echo ""
           echo "🖥️  Cluster configurado:"
           echo "Cluster ID: $(echo "$job_details" | jq -r '.settings.tasks[0].existing_cluster_id')"
-          echo "Cluster Name: Cluster_SD (reutilizado)"
+          echo "Cluster Name: cluster_SD_PF (reutilizado)"
           
         else
           echo "❌ No se pudo encontrar el workflow creado"
