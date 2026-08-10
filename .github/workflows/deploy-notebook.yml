@@ -37,15 +37,15 @@ jobs:
         DEST_HOST=${{ secrets.DATABRICKS_DEST_HOST }}
         DEST_TOKEN=${{ secrets.DATABRICKS_DEST_TOKEN }}
         DEST_BASE="/proyecto_final_kelly_esteban"
+        echo "Creando carpeta $DEST_BASE si no existe..."
+        curl -s -X POST \
+          -H "Authorization: Bearer $DEST_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d "{\"path\":\"$DEST_BASE\"}" \
+          "$DEST_HOST/api/2.0/workspace/mkdirs"
         for file in notebooks_to_deploy/*.py; do
           name=$(basename "$file" .py)
           dest_path="$DEST_BASE/$name"
-          echo "Creando carpeta $DEST_BASE si no existe..."
-          curl -s -X POST \
-            -H "Authorization: Bearer $DEST_TOKEN" \
-            -H "Content-Type: application/json" \
-            -d "{\"path\":\"$DEST_BASE\"}" \
-            "$DEST_HOST/api/2.0/workspace/mkdirs"
           echo "Importando $file → $dest_path"
           response=$(curl -s -X POST \
             -H "Authorization: Bearer $DEST_TOKEN" \
@@ -370,11 +370,6 @@ jobs:
         WORKFLOW_NAME="WF_ADB"
         
         echo "🚀 Ejecutando workflow: $WORKFLOW_NAME"
-        
-        # Obtener job_id del workflow
-        workflows_list=$(curl -s -X GET \
-          -H "Authorization: Bearer $DEST_TOKEN" \
-          "$DEST_HOST/api/2.1/jobs/list")
         
         job_id="${{ env.WORKFLOW_JOB_ID }}"
         
