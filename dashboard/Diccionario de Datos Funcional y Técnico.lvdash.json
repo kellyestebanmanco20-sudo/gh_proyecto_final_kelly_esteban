@@ -1,0 +1,925 @@
+{
+  "datasets": [
+    {
+      "name": "kpi_criticos",
+      "displayName": "KPI - Datos Críticos",
+      "queryLines": [
+        "SELECT\n",
+        "  SUM(\n",
+        "    CASE\n",
+        "      WHEN dato_critico = 'SÍ' THEN 1\n",
+        "      ELSE 0\n",
+        "    END\n",
+        "  ) AS criticos\n",
+        "FROM\n",
+        "  catalog_au.silver.conceptos_calidad_trazabilidad"
+      ]
+    },
+    {
+      "name": "kpi_total",
+      "displayName": "KPI - Total Entidades",
+      "queryLines": [
+        "SELECT\n",
+        "  COUNT(*) AS total\n",
+        "FROM\n",
+        "  catalog_au.silver.conceptos_calidad_trazabilidad"
+      ]
+    },
+    {
+      "name": "kpi_subdominios",
+      "displayName": "KPI - Subdominios",
+      "queryLines": [
+        "SELECT\n",
+        "  COUNT(DISTINCT nombre_del_subdominio) AS subdominios\n",
+        "FROM\n",
+        "  catalog_au.silver.conceptos_calidad_trazabilidad"
+      ]
+    },
+    {
+      "name": "kpi_reglas",
+      "displayName": "KPI - Con Regla de Calidad",
+      "queryLines": [
+        "SELECT\n",
+        "  SUM(\n",
+        "    CASE\n",
+        "      WHEN\n",
+        "        id_regla_de_calidad IS NOT NULL\n",
+        "        AND id_regla_de_calidad != ''\n",
+        "      THEN\n",
+        "        1\n",
+        "      ELSE 0\n",
+        "    END\n",
+        "  ) AS con_regla\n",
+        "FROM\n",
+        "  catalog_au.silver.conceptos_calidad_trazabilidad"
+      ]
+    },
+    {
+      "name": "kpi_trazabilidad",
+      "displayName": "KPI - Con Trazabilidad",
+      "queryLines": [
+        "SELECT\n",
+        "  SUM(\n",
+        "    CASE\n",
+        "      WHEN\n",
+        "        tabla_en_fuente_oficial IS NOT NULL\n",
+        "        AND tabla_en_fuente_oficial != ''\n",
+        "      THEN\n",
+        "        1\n",
+        "      ELSE 0\n",
+        "    END\n",
+        "  ) AS con_traz\n",
+        "FROM\n",
+        "  catalog_au.silver.conceptos_calidad_trazabilidad"
+      ]
+    },
+    {
+      "name": "clasificacion_dominio",
+      "displayName": "Clasificación por Dominio",
+      "queryLines": [
+        "SELECT\n",
+        "  nombre_del_dominio,\n",
+        "  SUM(\n",
+        "    CASE\n",
+        "      WHEN dato_critico = 'SÍ' THEN 1\n",
+        "      ELSE 0\n",
+        "    END\n",
+        "  ) AS datos_criticos,\n",
+        "  SUM(\n",
+        "    CASE\n",
+        "      WHEN personal = 'SÍ' THEN 1\n",
+        "      ELSE 0\n",
+        "    END\n",
+        "  ) AS datos_personales,\n",
+        "  SUM(\n",
+        "    CASE\n",
+        "      WHEN sensible = 'SÍ' THEN 1\n",
+        "      ELSE 0\n",
+        "    END\n",
+        "  ) AS datos_sensibles\n",
+        "FROM\n",
+        "  catalog_au.silver.conceptos_calidad_trazabilidad\n",
+        "GROUP BY\n",
+        "  nombre_del_dominio\n",
+        "ORDER BY\n",
+        "  nombre_del_dominio"
+      ]
+    },
+    {
+      "name": "kpi_dominios",
+      "displayName": "KPI - Dominios",
+      "queryLines": [
+        "SELECT\n",
+        "  COUNT(DISTINCT nombre_del_dominio) AS dominios\n",
+        "FROM\n",
+        "  catalog_au.silver.conceptos_calidad_trazabilidad"
+      ]
+    },
+    {
+      "name": "principios_calidad",
+      "displayName": "Reglas de Calidad por Principio y Dominio",
+      "queryLines": [
+        "SELECT\n",
+        "  nombre_del_dominio,\n",
+        "  principio_de_calidad_asociado,\n",
+        "  COUNT(*) AS cantidad_reglas\n",
+        "FROM\n",
+        "  catalog_au.silver.conceptos_calidad_trazabilidad\n",
+        "WHERE\n",
+        "  id_regla_de_calidad IS NOT NULL\n",
+        "  AND id_regla_de_calidad != ''\n",
+        "GROUP BY\n",
+        "  nombre_del_dominio,\n",
+        "  principio_de_calidad_asociado\n",
+        "ORDER BY\n",
+        "  cantidad_reglas DESC"
+      ]
+    },
+    {
+      "name": "completitud",
+      "displayName": "Completitud del Diccionario por Subdominio",
+      "queryLines": [
+        "SELECT\n",
+        "  nombre_del_subdominio,\n",
+        "  nombre_del_dominio,\n",
+        "  COUNT(*) AS total_entidades,\n",
+        "  ROUND(\n",
+        "    SUM(\n",
+        "      CASE\n",
+        "        WHEN\n",
+        "          concepto_de_negocio IS NOT NULL\n",
+        "          AND concepto_de_negocio != ''\n",
+        "        THEN\n",
+        "          1\n",
+        "        ELSE 0\n",
+        "      END\n",
+        "    )\n",
+        "      * 100.0\n",
+        "      / COUNT(*),\n",
+        "    1\n",
+        "  ) AS pct_concepto_negocio,\n",
+        "  ROUND(\n",
+        "    SUM(\n",
+        "      CASE\n",
+        "        WHEN\n",
+        "          id_regla_de_calidad IS NOT NULL\n",
+        "          AND id_regla_de_calidad != ''\n",
+        "        THEN\n",
+        "          1\n",
+        "        ELSE 0\n",
+        "      END\n",
+        "    )\n",
+        "      * 100.0\n",
+        "      / COUNT(*),\n",
+        "    1\n",
+        "  ) AS pct_regla_calidad,\n",
+        "  ROUND(\n",
+        "    SUM(\n",
+        "      CASE\n",
+        "        WHEN\n",
+        "          tabla_en_fuente_oficial IS NOT NULL\n",
+        "          AND tabla_en_fuente_oficial != ''\n",
+        "        THEN\n",
+        "          1\n",
+        "        ELSE 0\n",
+        "      END\n",
+        "    )\n",
+        "      * 100.0\n",
+        "      / COUNT(*),\n",
+        "    1\n",
+        "  ) AS pct_trazabilidad,\n",
+        "  SUM(\n",
+        "    CASE\n",
+        "      WHEN\n",
+        "        concepto_de_negocio IS NULL\n",
+        "        OR concepto_de_negocio = ''\n",
+        "      THEN\n",
+        "        1\n",
+        "      ELSE 0\n",
+        "    END\n",
+        "  ) AS sin_concepto,\n",
+        "  SUM(\n",
+        "    CASE\n",
+        "      WHEN\n",
+        "        id_regla_de_calidad IS NULL\n",
+        "        OR id_regla_de_calidad = ''\n",
+        "      THEN\n",
+        "        1\n",
+        "      ELSE 0\n",
+        "    END\n",
+        "  ) AS sin_regla_calidad,\n",
+        "  SUM(\n",
+        "    CASE\n",
+        "      WHEN\n",
+        "        tabla_en_fuente_oficial IS NULL\n",
+        "        OR tabla_en_fuente_oficial = ''\n",
+        "      THEN\n",
+        "        1\n",
+        "      ELSE 0\n",
+        "    END\n",
+        "  ) AS sin_trazabilidad\n",
+        "FROM\n",
+        "  catalog_au.silver.conceptos_calidad_trazabilidad\n",
+        "GROUP BY\n",
+        "  nombre_del_subdominio,\n",
+        "  nombre_del_dominio\n",
+        "ORDER BY\n",
+        "  nombre_del_dominio,\n",
+        "  total_entidades DESC"
+      ]
+    },
+    {
+      "name": "prioridad",
+      "displayName": "Distribución por Prioridad",
+      "queryLines": [
+        "SELECT\n",
+        "  prioridad_del_entidad_de_dato,\n",
+        "  COUNT(*) AS cantidad\n",
+        "FROM\n",
+        "  catalog_au.silver.conceptos_calidad_trazabilidad\n",
+        "WHERE\n",
+        "  prioridad_del_entidad_de_dato IS NOT NULL\n",
+        "GROUP BY\n",
+        "  prioridad_del_entidad_de_dato\n",
+        "ORDER BY\n",
+        "  CASE prioridad_del_entidad_de_dato\n",
+        "    WHEN 'Alta' THEN 1\n",
+        "    WHEN 'Media' THEN 2\n",
+        "    WHEN 'Baja' THEN 3\n",
+        "    ELSE 4\n",
+        "  END"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "555613e9",
+      "displayName": "Diccionario de Datos",
+      "layout": [
+        {
+          "widget": {
+            "name": "kpi_total",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "kpi_total",
+                  "fields": [
+                    {
+                      "name": "sum(total)",
+                      "expression": "SUM(`total`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Total Entidades de Dato",
+                "showTitle": true
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(total)",
+                  "rowNumber": 0
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_dominios",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "kpi_dominios",
+                  "fields": [
+                    {
+                      "name": "sum(dominios)",
+                      "expression": "SUM(`dominios`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Dominios",
+                "showTitle": true
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(dominios)",
+                  "rowNumber": 0
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 2,
+            "y": 0,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_subdominios",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "kpi_subdominios",
+                  "fields": [
+                    {
+                      "name": "sum(subdominios)",
+                      "expression": "SUM(`subdominios`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Subdominios",
+                "showTitle": true
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(subdominios)",
+                  "rowNumber": 0
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 0,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_criticos",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "kpi_criticos",
+                  "fields": [
+                    {
+                      "name": "sum(criticos)",
+                      "expression": "SUM(`criticos`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Datos Críticos",
+                "showTitle": true
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(criticos)",
+                  "rowNumber": 0
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 0,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_reglas",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "kpi_reglas",
+                  "fields": [
+                    {
+                      "name": "sum(con_regla)",
+                      "expression": "SUM(`con_regla`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Con Regla de Calidad",
+                "showTitle": true
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(con_regla)",
+                  "rowNumber": 0
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 8,
+            "y": 0,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_trazabilidad",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "kpi_trazabilidad",
+                  "fields": [
+                    {
+                      "name": "sum(con_traz)",
+                      "expression": "SUM(`con_traz`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Con Trazabilidad",
+                "showTitle": true
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(con_traz)",
+                  "rowNumber": 0
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 10,
+            "y": 0,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "pie_prioridad",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "prioridad",
+                  "fields": [
+                    {
+                      "name": "sum(cantidad)",
+                      "expression": "SUM(`cantidad`)"
+                    },
+                    {
+                      "name": "prioridad_del_entidad_de_dato",
+                      "expression": "`prioridad_del_entidad_de_dato`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Distribución por Prioridad",
+                "showTitle": true
+              },
+              "widgetType": "pie",
+              "encodings": {
+                "angle": {
+                  "fieldName": "sum(cantidad)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "cantidad"
+                },
+                "color": {
+                  "fieldName": "prioridad_del_entidad_de_dato",
+                  "displayName": "prioridad_del_entidad_de_dato",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 3,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "bar_clasificacion",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "clasificacion_dominio",
+                  "fields": [
+                    {
+                      "name": "nombre_del_dominio",
+                      "expression": "`nombre_del_dominio`"
+                    },
+                    {
+                      "name": "sum(datos_criticos)",
+                      "expression": "SUM(`datos_criticos`)"
+                    },
+                    {
+                      "name": "sum(datos_personales)",
+                      "expression": "SUM(`datos_personales`)"
+                    },
+                    {
+                      "name": "sum(datos_sensibles)",
+                      "expression": "SUM(`datos_sensibles`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Datos Críticos, Personales y Sensibles por Dominio",
+                "showTitle": true
+              },
+              "mark": {
+                "colors": [
+                  "#E74C3C",
+                  "#3498DB",
+                  "#F39C12"
+                ],
+                "layout": "group"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "nombre_del_dominio",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fields": [
+                    {
+                      "fieldName": "sum(datos_criticos)",
+                      "displayName": "Críticos"
+                    },
+                    {
+                      "fieldName": "sum(datos_personales)",
+                      "displayName": "Personales"
+                    },
+                    {
+                      "fieldName": "sum(datos_sensibles)",
+                      "displayName": "Sensibles"
+                    }
+                  ],
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 3,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "tabla_completitud",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "completitud",
+                  "fields": [
+                    {
+                      "name": "nombre_del_subdominio",
+                      "expression": "`nombre_del_subdominio`"
+                    },
+                    {
+                      "name": "nombre_del_dominio",
+                      "expression": "`nombre_del_dominio`"
+                    },
+                    {
+                      "name": "total_entidades",
+                      "expression": "`total_entidades`"
+                    },
+                    {
+                      "name": "pct_concepto_negocio",
+                      "expression": "`pct_concepto_negocio`"
+                    },
+                    {
+                      "name": "pct_regla_calidad",
+                      "expression": "`pct_regla_calidad`"
+                    },
+                    {
+                      "name": "pct_trazabilidad",
+                      "expression": "`pct_trazabilidad`"
+                    },
+                    {
+                      "name": "sin_concepto",
+                      "expression": "`sin_concepto`"
+                    },
+                    {
+                      "name": "sin_regla_calidad",
+                      "expression": "`sin_regla_calidad`"
+                    },
+                    {
+                      "name": "sin_trazabilidad",
+                      "expression": "`sin_trazabilidad`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Completitud del Diccionario por Subdominio (% de los 3 Pilares)",
+                "showTitle": true
+              },
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "nombre_del_subdominio"
+                  },
+                  {
+                    "fieldName": "nombre_del_dominio"
+                  },
+                  {
+                    "fieldName": "total_entidades"
+                  },
+                  {
+                    "fieldName": "pct_concepto_negocio"
+                  },
+                  {
+                    "fieldName": "pct_regla_calidad"
+                  },
+                  {
+                    "fieldName": "pct_trazabilidad"
+                  },
+                  {
+                    "fieldName": "sin_concepto"
+                  },
+                  {
+                    "fieldName": "sin_regla_calidad"
+                  },
+                  {
+                    "fieldName": "sin_trazabilidad"
+                  }
+                ]
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 15,
+            "width": 12,
+            "height": 7
+          }
+        },
+        {
+          "widget": {
+            "name": "bar_principios",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "principios_calidad",
+                  "fields": [
+                    {
+                      "name": "nombre_del_dominio",
+                      "expression": "`nombre_del_dominio`"
+                    },
+                    {
+                      "name": "principio_de_calidad_asociado",
+                      "expression": "`principio_de_calidad_asociado`"
+                    },
+                    {
+                      "name": "sum(cantidad_reglas)",
+                      "expression": "SUM(`cantidad_reglas`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Reglas de Calidad por Principio y Dominio",
+                "showTitle": true
+              },
+              "mark": {
+                "layout": "stack"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "principio_de_calidad_asociado",
+                  "displayName": "Principio de Calidad",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "sum(cantidad_reglas)",
+                  "displayName": "Cantidad de Reglas",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "nombre_del_dominio",
+                  "displayName": "Dominio",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 9,
+            "width": 12,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "bar_brechas",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "completitud",
+                  "fields": [
+                    {
+                      "name": "nombre_del_subdominio",
+                      "expression": "`nombre_del_subdominio`"
+                    },
+                    {
+                      "name": "sum(sin_concepto)",
+                      "expression": "SUM(`sin_concepto`)"
+                    },
+                    {
+                      "name": "sum(sin_regla_calidad)",
+                      "expression": "SUM(`sin_regla_calidad`)"
+                    },
+                    {
+                      "name": "sum(sin_trazabilidad)",
+                      "expression": "SUM(`sin_trazabilidad`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Entidades con Información Incompleta por Subdominio",
+                "showTitle": true
+              },
+              "mark": {
+                "colors": [
+                  "#3498DB",
+                  "#E74C3C",
+                  "#F39C12"
+                ],
+                "layout": "group"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "nombre_del_subdominio",
+                  "displayName": "Subdominio",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fields": [
+                    {
+                      "fieldName": "sum(sin_concepto)",
+                      "displayName": "Sin Concepto de Negocio"
+                    },
+                    {
+                      "fieldName": "sum(sin_regla_calidad)",
+                      "displayName": "Sin Regla de Calidad"
+                    },
+                    {
+                      "fieldName": "sum(sin_trazabilidad)",
+                      "displayName": "Sin Trazabilidad"
+                    }
+                  ],
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 22,
+            "width": 12,
+            "height": 6
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    }
+  ],
+  "uiSettings": {
+    "theme": {
+      "widgetHeaderAlignment": "ALIGNMENT_UNSPECIFIED"
+    },
+    "applyModeEnabled": false
+  }
+}
