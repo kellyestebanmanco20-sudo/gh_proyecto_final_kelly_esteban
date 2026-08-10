@@ -3,6 +3,9 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -34,15 +37,15 @@ jobs:
         DEST_HOST=${{ secrets.DATABRICKS_DEST_HOST }}
         DEST_TOKEN=${{ secrets.DATABRICKS_DEST_TOKEN }}
         DEST_BASE="/proyecto_final_kelly_esteban"
+        echo "Creando carpeta $DEST_BASE si no existe..."
+        curl -s -X POST \
+          -H "Authorization: Bearer $DEST_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d "{\"path\":\"$DEST_BASE\"}" \
+          "$DEST_HOST/api/2.0/workspace/mkdirs"
         for file in notebooks_to_deploy/*.py; do
           name=$(basename "$file" .py)
           dest_path="$DEST_BASE/$name"
-          echo "Creando carpeta $DEST_BASE si no existe..."
-          curl -s -X POST \
-            -H "Authorization: Bearer $DEST_TOKEN" \
-            -H "Content-Type: application/json" \
-            -d "{\"path\":\"$DEST_BASE\"}" \
-            "$DEST_HOST/api/2.0/workspace/mkdirs"
           echo "Importando $file → $dest_path"
           response=$(curl -s -X POST \
             -H "Authorization: Bearer $DEST_TOKEN" \
@@ -67,7 +70,7 @@ jobs:
         # Listar todos los workflows y buscar por nombre
         workflows_response=$(curl -s -X GET \
           -H "Authorization: Bearer $DEST_TOKEN" \
-          "$DEST_HOST/api/2.1/jobs/list")
+          "$DEST_HOST/api/2.1/jobs/list?limit=100")
         
         # Extraer job_id si existe el workflow
         existing_job_id=$(echo "$workflows_response" | jq -r --arg name "$WORKFLOW_NAME" '.jobs[]? | select(.settings.name == $name) | .job_id')
@@ -310,6 +313,7 @@ jobs:
         
         if [ "$job_id" != "" ] && [ "$job_id" != "null" ]; then
           echo "✅ Workflow 'WF_ADB' creado exitosamente con ID: $job_id"
+          echo "WORKFLOW_JOB_ID=$job_id" >> $GITHUB_ENV
           
           # Obtener detalles del workflow creado
           workflow_details=$(curl -s -X GET \
@@ -333,11 +337,7 @@ jobs:
         echo "🔍 Validando la configuración del workflow creado..."
         
         # Obtener lista de workflows y encontrar el recién creado
-        workflows_list=$(curl -s -X GET \
-          -H "Authorization: Bearer $DEST_TOKEN" \
-          "$DEST_HOST/api/2.1/jobs/list")
-        
-        job_id=$(echo "$workflows_list" | jq -r --arg name "$WORKFLOW_NAME" '.jobs[]? | select(.settings.name == $name) | .job_id')
+        job_id="${{ env.WORKFLOW_JOB_ID }}"
         
         if [ "$job_id" != "" ] && [ "$job_id" != "null" ]; then
           echo "✅ Workflow encontrado con ID: $job_id"
@@ -371,12 +371,7 @@ jobs:
         
         echo "🚀 Ejecutando workflow: $WORKFLOW_NAME"
         
-        # Obtener job_id del workflow
-        workflows_list=$(curl -s -X GET \
-          -H "Authorization: Bearer $DEST_TOKEN" \
-          "$DEST_HOST/api/2.1/jobs/list")
-        
-        job_id=$(echo "$workflows_list" | jq -r --arg name "$WORKFLOW_NAME" '.jobs[]? | select(.settings.name == $name) | .job_id')
+        job_id="${{ env.WORKFLOW_JOB_ID }}"
         
         if [ "$job_id" != "" ] && [ "$job_id" != "null" ]; then
           echo "✅ Workflow encontrado con ID: $job_id"
@@ -420,8 +415,8 @@ jobs:
         echo "Job ID: $JOB_ID"
         echo "Run ID: $RUN_ID"
         
-        # Monitorear por máximo 10 minutos (600 segundos)
-        max_wait_time=600
+        # Monitorear por máximo 60 minutos (3600 segundos)
+        max_wait_time=3600
         wait_time=0
         check_interval=30
         
