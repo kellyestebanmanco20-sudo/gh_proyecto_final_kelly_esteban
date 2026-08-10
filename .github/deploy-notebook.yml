@@ -17,7 +17,7 @@ jobs:
       run: |
         ORIGIN_HOST=${{ secrets.DATABRICKS_ORIGIN_HOST }}
         ORIGIN_TOKEN=${{ secrets.DATABRICKS_ORIGIN_TOKEN }}
-        NOTEBOOK_BASE="/Workspace/smartdata_proyecto_final/proyecto_final_kelly_esteban/proceso"
+        NOTEBOOK_BASE="/Workspace/smartdata_proyecto_final/gh_proyecto_final_kelly_esteban/proceso"
         NOTEBOOKS=("1.Preparacion_Ambiente" "2.Ingest_Conceptos_Negocio" "2.Ingest_Reglas_Calidad" "2.Ingest_Trazabilidad" "3.Transform" "4.Load" "5.Grants_Medallion")
 
         mkdir -p notebooks_to_deploy
@@ -33,7 +33,7 @@ jobs:
       run: |
         DEST_HOST=${{ secrets.DATABRICKS_DEST_HOST }}
         DEST_TOKEN=${{ secrets.DATABRICKS_DEST_TOKEN }}
-        DEST_BASE="/smartdatayml3"
+        DEST_BASE="/proyecto_final_kelly_esteban"
         for file in notebooks_to_deploy/*.py; do
           name=$(basename "$file" .py)
           dest_path="$DEST_BASE/$name"
@@ -116,7 +116,6 @@ jobs:
       run: |
         DEST_HOST=${{ secrets.DATABRICKS_DEST_HOST }}
         DEST_TOKEN=${{ secrets.DATABRICKS_DEST_TOKEN }}
-        DEST_BASE="/py/scripts/main"
         CLUSTER_ID="${{ env.CLUSTER_ID }}"
         
         echo "Creando workflow: WF_ADB con cluster existente ID: $CLUSTER_ID"
@@ -131,7 +130,7 @@ jobs:
               "task_key": "prepambiente",
               "description": "Ejecuta notebook prepambiente",
               "notebook_task": {
-                "notebook_path": "/smartdatayml3/1.Preparacion_Ambiente",
+                "notebook_path": "/proyecto_final_kelly_esteban/1.Preparacion_Ambiente",
                 "source": "WORKSPACE",
                 "base_parameters": {
                   "storageName": "sasmartdata010826ke"
@@ -145,7 +144,7 @@ jobs:
               "task_key": "ingest_conceptos",
               "description": "Ejecuta notebook ingest_conceptos",
               "notebook_task": {
-                "notebook_path": "/smartdatayml3/2.Ingest_Conceptos_Negocio",
+                "notebook_path": "/proyecto_final_kelly_esteban/2.Ingest_Conceptos_Negocio",
                 "source": "WORKSPACE",
                 "base_parameters": {
                   "container": "raw",
@@ -168,7 +167,7 @@ jobs:
               "task_key": "ingest_reglas",
               "description": "Ejecuta notebook ingest_reglas",
               "notebook_task": {
-                "notebook_path": "/smartdatayml3/2.Ingest_Reglas_Calidad",
+                "notebook_path": "/proyecto_final_kelly_esteban/2.Ingest_Reglas_Calidad",
                 "source": "WORKSPACE",
                 "base_parameters": {
                   "container": "raw",
@@ -191,7 +190,7 @@ jobs:
               "task_key": "ingest_trazabilidad",
               "description": "Ejecuta notebook ingest_trazabilidad",
               "notebook_task": {
-                "notebook_path": "/smartdatayml3/2.Ingest_Trazabilidad",
+                "notebook_path": "/proyecto_final_kelly_esteban/2.Ingest_Trazabilidad",
                 "source": "WORKSPACE",
                 "base_parameters": {
                   "container": "raw",
@@ -214,7 +213,7 @@ jobs:
               "task_key": "transform",
               "description": "Ejecuta notebook transform",
               "notebook_task": {
-                "notebook_path": "/smartdatayml3/3.Transform",
+                "notebook_path": "/proyecto_final_kelly_esteban/3.Transform",
                 "source": "WORKSPACE",
                 "base_parameters": {
                   "catalogo": "catalog_au",
@@ -241,7 +240,7 @@ jobs:
               "task_key": "load",
               "description": "Ejecuta notebook load",
               "notebook_task": {
-                "notebook_path": "/smartdatayml3/4.Load",
+                "notebook_path": "/proyecto_final_kelly_esteban/4.Load",
                 "source": "WORKSPACE",
                 "base_parameters": {
                   "catalogo": "catalog_au",
@@ -262,7 +261,7 @@ jobs:
               "task_key": "grants",
               "description": "Ejecuta notebook grants",
               "notebook_task": {
-                "notebook_path": "/smartdatayml3/5.Grants_Medallion",
+                "notebook_path": "/proyecto_final_kelly_esteban/5.Grants_Medallion",
                 "source": "WORKSPACE"
               },
               "existing_cluster_id": "$CLUSTER_ID",
@@ -276,7 +275,7 @@ jobs:
             }
           ],
           "schedule": {
-            "quartz_cron_expression": "0 0 8 * * ?",
+            "quartz_cron_expression": "0 0 8 * * ? *",
             "timezone_id": "America/Lima",
             "pause_status": "PAUSED"
           },
