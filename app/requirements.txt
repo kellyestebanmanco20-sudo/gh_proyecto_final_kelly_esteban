@@ -2,3 +2,4 @@ streamlit
 pandas
 databricks-sql-connector
 databricks-sdk
+databricks-connect
